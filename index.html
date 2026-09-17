@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signup with Firebase OTP</title>
+    <style>
+        /* Same CSS as before */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f2f5;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #1a73e8;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 0.8rem;
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background: #1557b0;
+        }
+
+        #otpSection {
+            display: none;
+        }
+
+        .error {
+            color: red;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Sign Up</h2>
+        <form id="signupForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+                <div class="error" id="emailError">Invalid email format</div>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <button type="submit" id="submitBtn">Send OTP</button>
+        </form>
+
+        <form id="otpForm">
+            <div class="form-group" id="otpSection">
+                <label for="otp">Enter OTP</label>
+                <input type="text" id="otp" maxlength="6" required>
+                <div class="error" id="otpError">Invalid OTP</div>
+            </div>
+            <button type="submit" id="verifyBtn" style="display: none;">Verify OTP</button>
+        </form>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+
+    <script>
+        // Your Firebase configuration object from Firebase Console
+        const firebaseConfig = {
+            apiKey: "AIzaSyB7m-VfxlFjV96ENeN2-N6B9QzsPGorpoA",
+            authDomain: "panindia-d5ba0.firebaseapp.com",
+            projectId: "panindia-d5ba0",
+            storageBucket: "panindia-d5ba0.firebasestorage.app",
+            messagingSenderId: "498447954142",
+            appId: "1:498447954142:web:71b601d0d966408ac1524f",
+            measurementId: "G-1CN7GD2XK1"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+
+        const signupForm = document.getElementById('signupForm');
+        const otpForm = document.getElementById('otpForm');
+        const otpSection = document.getElementById('otpSection');
+        const submitBtn = document.getElementById('submitBtn');
+        const verifyBtn = document.getElementById('verifyBtn');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const usernameInput = document.getElementById('username');
+        const otpInput = document.getElementById('otp');
+        const emailError = document.getElementById('emailError');
+        const otpError = document.getElementById('otpError');
+
+        let tempUserData = {};
+        let generatedOTP;
+
+        // Email validation
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        // Simulate OTP generation (in real scenario, this would be on backend)
+        function generateOTP() {
+            return Math.floor(100000 + Math.random() * 900000).toString();
+        }
+
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            const username = usernameInput.value;
+
+            if (!validateEmail(email)) {
+                emailError.style.display = 'block';
+                return;
+            }
+
+            emailError.style.display = 'none';
+            tempUserData = { email, password, username };
+            
+            try {
+                // Create user but don't sign in yet
+                generatedOTP = generateOTP();
+                console.log(`Generated OTP: ${generatedOTP}`); // Replace with actual email sending
+                
+                // In a real scenario, you'd:
+                // 1. Send OTP via email through backend
+                // 2. Store OTP temporarily with email association
+                
+                otpSection.style.display = 'block';
+                submitBtn.style.display = 'none';
+                verifyBtn.style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                emailError.textContent = error.message;
+                emailError.style.display = 'block';
+            }
+        });
+
+        otpForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const enteredOTP = otpInput.value;
+            
+            if (enteredOTP === generatedOTP) {
+                try {
+                    // Create user in Firebase after OTP verification
+                    const userCredential = await auth.createUserWithEmailAndPassword(
+                        tempUserData.email,
+                        tempUserData.password
+                    );
+                    
+                    // Optionally update user profile with username
+                    await userCredential.user.updateProfile({
+                        displayName: tempUserData.username
+                    });
+
+                    alert('Signup successful!');
+                    signupForm.reset();
+                    otpForm.reset();
+                    otpSection.style.display = 'none';
+                    submitBtn.style.display = 'block';
+                    verifyBtn.style.display = 'none';
+                } catch (error) {
+                    console.error('Error:', error);
+                    otpError.textContent = error.message;
+                    otpError.style.display = 'block';
+                }
+            } else {
+                otpError.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
